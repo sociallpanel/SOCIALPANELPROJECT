@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Payment Success (Demo)</title>
+</head>
+<body style="font-family:Arial,Helvetica,sans-serif;padding:2rem;">
+  <h1>Payment Success (Demo)</h1>
+  <p id="info">Processing...</p>
+  <script>
+    // Read query params
+    function qp() {
+      const s = location.search.substring(1);
+      return Object.fromEntries(new URLSearchParams(s));
+    }
+    const params = qp();
+    const email = params.email;
+    const amount = params.amount;
+    const txRef = params.txRef;
+    document.getElementById('info').textContent = `Crediting ${amount} to ${email}...`;
+    // POST to backend /api/credit to actually add the balance
+    fetch('/api/credit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, amount, txRef })
+    }).then(r => r.json()).then(j => {
+      if (j.status === 'success') {
+        // Update localStorage copy and redirect to dashboard
+        localStorage.setItem('loggedInEmail', email);
+        localStorage.setItem('userBalance', parseFloat(j.balance).toFixed(2));
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+      } else {
+        document.getElementById('info').textContent = 'Failed to credit: ' + (j.message || 'unknown');
+      }
+    }).catch(err => {
+      document.getElementById('info').textContent = 'Error contacting backend: ' + err;
+    });
+  </script>
+</body>
+</html>
